@@ -8,7 +8,8 @@ them.
 Inspired by the physical puzzle books ("46,600 suspects, 18 clues, 1 killer"),
 but every case is generated fresh, so the file is never the same twice.
 
-**Play:** https://th1nkful.github.io/murder-mystery/
+**Play:** https://th1nkful.github.io/murder-mystery/ (once Pages is switched on
+— see [Deployment](#deployment))
 
 ## How a case works
 
@@ -69,11 +70,33 @@ npm run preview  # serve the production build
 
 ## Deployment
 
-Pushing to `main` runs lint, tests and the build, then publishes `dist/` to
-GitHub Pages via `.github/workflows/deploy.yml`. Enable it once under
-**Settings → Pages → Source → GitHub Actions**. The build uses relative asset
-paths, so it works from a project page, a user page or a subdirectory without
-further configuration.
+The build uses relative asset paths, so the same `dist/` works from a GitHub
+Pages project page, a Vercel deployment, or any subdirectory — no per-host
+configuration and no rebuild between them. Both routes below are set up; pick
+one, or run both.
+
+### GitHub Pages
+
+Already wired up in `.github/workflows/deploy.yml`: every push to `main` runs
+lint, tests and the build, then publishes `dist/`. It needs one setting turned
+on, once:
+
+**Settings → Pages → Source → GitHub Actions**
+
+The next push to `main` then publishes to
+`https://th1nkful.github.io/murder-mystery/`. Nothing to install and no account
+beyond GitHub.
+
+### Vercel
+
+`vercel.json` pins the build command, the output directory and long-lived
+caching for the hashed assets — but Vercel detects a Vite app on its own, so
+importing the repo at [vercel.com/new](https://vercel.com/new) and accepting
+the defaults is enough. It builds every push and gives preview URLs for
+branches, which Pages does not.
+
+If you would rather not connect the repo, `npx vercel --prod` from a checkout
+deploys the same thing.
 
 ## Layout
 
