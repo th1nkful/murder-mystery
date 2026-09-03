@@ -10,6 +10,10 @@ interface Props {
   killerId: number;
   onPage: (page: number) => void;
   onToggle: (id: number) => void;
+  onCrossOutPage: (page: number) => void;
+  onRestorePage: (page: number) => void;
+  onToggleRow: (page: number, row: number) => void;
+  onToggleColumn: (page: number, col: number) => void;
   onUndo?: () => void;
   onSearch: () => void;
 }
@@ -23,6 +27,10 @@ export default function CasefilePanel({
   killerId,
   onPage,
   onToggle,
+  onCrossOutPage,
+  onRestorePage,
+  onToggleRow,
+  onToggleColumn,
   onUndo,
   onSearch,
 }: Props) {
@@ -41,6 +49,16 @@ export default function CasefilePanel({
   const pageSuspects = useMemo(
     () => suspects.slice((page - 1) * perPage, page * perPage),
     [suspects, page, perPage],
+  );
+  const pageCleared = standingPerPage[page] === 0;
+
+  /** Which columns of this page are struck through top to bottom. */
+  const columnStruck = useMemo(
+    () =>
+      Array.from({ length: cols }, (_, i) =>
+        pageSuspects.filter((s) => s.col === i + 1).every((s) => eliminated.has(s.id)),
+      ),
+    [pageSuspects, eliminated, cols],
   );
 
   useEffect(() => {
@@ -82,14 +100,37 @@ export default function CasefilePanel({
         </button>
       </div>
 
+      <div className="file-toolbar">
+        {pageCleared ? (
+          <button className="chip" onClick={() => onRestorePage(page)} disabled={revealed}>
+            Bring page {page} back
+          </button>
+        ) : (
+          <button className="chip" onClick={() => onCrossOutPage(page)} disabled={revealed}>
+            Cross out the rest of page {page}
+          </button>
+        )}
+        <span className="toolbar-spacer" />
+      </div>
+
       <div className="page-strip" ref={stripRef}>
         {Array.from({ length: pages }, (_, i) => i + 1).map((n) => (
           <button
             key={n}
             data-active={n === page}
-            className={n === page ? "page-pip active" : "page-pip"}
+            className={[
+              "page-pip",
+              n === page ? "active" : "",
+              standingPerPage[n] === 0 ? "cleared" : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
             onClick={() => onPage(n)}
-            aria-label={`Page ${n}, ${standingPerPage[n]} still standing`}
+            aria-label={
+              standingPerPage[n] === 0
+                ? `Page ${n}, all crossed out`
+                : `Page ${n}, ${standingPerPage[n]} still standing`
+            }
           >
             <span className="pip-number">{n}</span>
             <span className="pip-count">{standingPerPage[n]}</span>
@@ -107,9 +148,15 @@ export default function CasefilePanel({
         <div className="grid" style={{ ["--cols" as string]: cols }}>
           <span className="grid-corner" aria-hidden="true" />
           {Array.from({ length: cols }, (_, i) => (
-            <span className="grid-col-head" key={`col-${i}`} aria-hidden="true">
+            <button
+              className={columnStruck[i] ? "grid-col-head struck" : "grid-col-head"}
+              key={`col-${i}`}
+              onClick={() => onToggleColumn(page, i + 1)}
+              disabled={revealed}
+              aria-label={`${columnStruck[i] ? "Bring back" : "Cross out"} column ${i + 1}`}
+            >
               {i + 1}
-            </span>
+            </button>
           ))}
           {Array.from({ length: rows }, (_, r) => (
             <Row
@@ -121,10 +168,15 @@ export default function CasefilePanel({
               revealed={revealed}
               killerId={killerId}
               onToggle={onToggle}
+              onToggleRow={() => onToggleRow(page, r + 1)}
             />
           ))}
         </div>
-        <p className="paper-foot">Tap a name to cross it out. Tap again to bring them back.</p>
+        <p className="paper-foot">
+          {pageCleared
+            ? "Nobody left on this page."
+            : "Tap a name to strike it — or a row or column number to strike the lot."}
+        </p>
       </div>
     </div>
   );
@@ -138,6 +190,7 @@ interface RowProps {
   revealed: boolean;
   killerId: number;
   onToggle: (id: number) => void;
+  onToggleRow: () => void;
 }
 
 function Row({
@@ -148,12 +201,19 @@ function Row({
   revealed,
   killerId,
   onToggle,
+  onToggleRow,
 }: RowProps) {
+  const rowStruck = suspects.every((suspect) => eliminated.has(suspect.id));
   return (
     <>
-      <span className="grid-row-head" aria-hidden="true">
+      <button
+        className={rowStruck ? "grid-row-head struck" : "grid-row-head"}
+        onClick={onToggleRow}
+        disabled={revealed}
+        aria-label={`${rowStruck ? "Bring back" : "Cross out"} row ${rowNumber}`}
+      >
         {rowNumber}
-      </span>
+      </button>
       {suspects.map((suspect) => (
         <NameCell
           key={suspect.id}

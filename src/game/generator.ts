@@ -11,6 +11,7 @@ import {
   type Clue,
   type DetectiveCase,
   type DifficultyId,
+  type SceneId,
   type Suspect,
 } from "./types";
 
@@ -19,26 +20,17 @@ import {
 /* ------------------------------------------------------------------ */
 
 /**
- * Fill `pages` pages with names. The name pool is deliberately smaller than
- * the number of slots, so some names repeat — that keeps "their name appears
- * only once in the casefile" a meaningful clue, and it is how a real list of
- * first names would look.
+ * Fill `pages` pages with names, all of them different.
+ *
+ * The pool is larger than the biggest casefile, so no case has to repeat
+ * itself: every suspect in a file is a distinct first name, and a name a clue
+ * points at ("a later page than Floyd") can only mean one person.
  */
 function buildSuspects(rng: Rng, pages: number): Suspect[] {
   const total = pages * PER_PAGE;
-  const distinct = Math.min(NAME_POOL.length, Math.max(60, Math.round(total * 0.7)));
-  const cast = shuffle(rng, NAME_POOL).slice(0, distinct);
+  const cast = shuffle(rng, NAME_POOL).slice(0, total);
 
-  const bag: string[] = [];
-  while (bag.length < total) {
-    for (const name of shuffle(rng, cast)) {
-      bag.push(name);
-      if (bag.length === total) break;
-    }
-  }
-
-  const placed = shuffle(rng, bag);
-  return placed.map((name, i) => ({
+  return cast.map((name, i) => ({
     id: i,
     name,
     page: Math.floor(i / PER_PAGE) + 1,
@@ -48,16 +40,7 @@ function buildSuspects(rng: Rng, pages: number): Suspect[] {
 }
 
 function buildContext(suspects: Suspect[], pages: number): CaseContext {
-  const nameCounts = new Map<string, number>();
-  for (const s of suspects) nameCounts.set(s.name, (nameCounts.get(s.name) ?? 0) + 1);
-  return {
-    suspects,
-    pages,
-    cols: PAGE_COLS,
-    rows: PAGE_ROWS,
-    nameCounts,
-    uniqueNamed: suspects.filter((s) => nameCounts.get(s.name) === 1),
-  };
+  return { suspects, pages, cols: PAGE_COLS, rows: PAGE_ROWS };
 }
 
 /* ------------------------------------------------------------------ */
@@ -253,31 +236,35 @@ const SURNAMES = [
   "Vasquez", "Winterbourne", "Ashby", "Blackwood", "Corvina", "Delacroix", "Everly",
 ];
 
-const LOCATIONS = [
-  "the Brackwater Hotel", "a locked flat on Sable Row", "the old Pier Ballroom",
-  "the Ravenscourt Library", "a dressing room at the Gaslight Theatre",
-  "the night ferry to Kellsholm", "the Harlow Street observatory",
-  "a lock-up beneath the viaduct", "the greenhouse at Wilder House",
-  "the last carriage of the 11:40 train",
+const LOCATIONS: { scene: SceneId; label: string }[] = [
+  { scene: "hotel", label: "the Brackwater Hotel" },
+  { scene: "flat", label: "a locked flat on Sable Row" },
+  { scene: "pier", label: "the old Pier Ballroom" },
+  { scene: "library", label: "the Ravenscourt Library" },
+  { scene: "theatre", label: "a dressing room at the Gaslight Theatre" },
+  { scene: "ferry", label: "the night ferry to Kellsholm" },
+  { scene: "observatory", label: "the Harlow Street observatory" },
+  { scene: "viaduct", label: "a lock-up beneath the viaduct" },
+  { scene: "greenhouse", label: "the greenhouse at Wilder House" },
+  { scene: "train", label: "the last carriage of the 11:40 train" },
 ];
 
+/** Clipped to the front of the folder, in the hand of whoever worked the scene. */
 const NOTES = [
-  "I didn't do it. I wrote down everything I noticed before they took me in. It's all in here.",
-  "They were in the file all along. I know it. I just couldn't get to the end of the list in time.",
   "Whoever did this signed their name in the room. Not on paper — in the details.",
-  "Don't trust the confession. Trust the list. The list can't lie.",
-  "I only had minutes. I scribbled what I could remember. It should be enough. It has to be.",
+  "No prints, no weapon, no witness worth the paper. Only what has to be true of them.",
+  "Everyone in the building that night is in here, and not one soul more. Check it twice.",
+  "Fourteen hours of canvassing comes to this: a roll of names and a handful of facts.",
+  "The room gave up more than the living did. It is all written down. Work it through.",
+  "They are still on this list. Nobody left the building before we sealed it.",
 ];
 
 function buildStory(rng: Rng): CaseStory {
-  const victimFirst = pick(rng, NAME_POOL);
-  let clientFirst = pick(rng, NAME_POOL);
-  while (clientFirst === victimFirst) clientFirst = pick(rng, NAME_POOL);
-  const surnames = shuffle(rng, SURNAMES);
+  const location = pick(rng, LOCATIONS);
   return {
-    victim: `${victimFirst} ${surnames[0]}`,
-    client: `${clientFirst} ${surnames[1]}`,
-    location: pick(rng, LOCATIONS),
+    victim: `${pick(rng, NAME_POOL)} ${pick(rng, SURNAMES)}`,
+    scene: location.scene,
+    location: location.label,
     note: pick(rng, NOTES),
   };
 }

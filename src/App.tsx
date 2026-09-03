@@ -12,9 +12,12 @@ export default function App() {
   const [rules, setRules] = useState(false);
   const [resumable, setResumable] = useState<CaseRef | null>(() => loadCurrent());
 
-  const openCase = useCallback((caseRef: CaseRef) => {
+  const [lockedMode, setLockedMode] = useState(false);
+
+  const openCase = useCallback((caseRef: CaseRef, locked = false) => {
     saveCurrent(caseRef);
     setResumable(caseRef);
+    setLockedMode(locked);
     setRoute({ kind: "game", caseRef });
   }, []);
 
@@ -40,6 +43,7 @@ export default function App() {
         <Game
           key={`${route.caseRef.difficulty}:${route.caseRef.seed}`}
           caseRef={route.caseRef}
+          lockedByDefault={lockedMode}
           onExit={goHome}
           onOpenCase={openCase}
           onShowRules={() => setRules(true)}

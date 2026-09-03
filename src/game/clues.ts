@@ -392,21 +392,6 @@ const rules: Rule[] = [
       );
     },
   },
-  /* ---------------- the casefile itself ---------------- */
-  {
-    key: "name-frequency",
-    family: "frequency",
-    make: (_rng, ctx, target) => {
-      const once = (ctx.nameCounts.get(target.name) ?? 0) === 1;
-      return clue(
-        "file",
-        once
-          ? "The killer's name appears *only once* in the whole casefile."
-          : "The killer's name appears *more than once* in the casefile — they share it with at least one other suspect.",
-        (s) => ((ctx.nameCounts.get(s.name) ?? 0) === 1) === once,
-      );
-    },
-  },
   /* ---------------- pages ---------------- */
   {
     key: "page-parity",
@@ -453,7 +438,7 @@ const rules: Rule[] = [
     key: "page-vs-name",
     family: "page-range",
     make: (rng, ctx, target) => {
-      const refs = ctx.uniqueNamed.filter((s) => s.page !== target.page);
+      const refs = ctx.suspects.filter((s) => s.page !== target.page);
       if (refs.length === 0) return null;
       const ref = pick(rng, refs);
       const later = target.page > ref.page;
@@ -470,8 +455,8 @@ const rules: Rule[] = [
     key: "page-between-names",
     family: "page-range",
     make: (rng, ctx, target) => {
-      const before = ctx.uniqueNamed.filter((s) => s.page < target.page);
-      const after = ctx.uniqueNamed.filter((s) => s.page > target.page);
+      const before = ctx.suspects.filter((s) => s.page < target.page);
+      const after = ctx.suspects.filter((s) => s.page > target.page);
       if (before.length === 0 || after.length === 0) return null;
       const lo = pick(rng, before);
       const hi = pick(rng, after);
@@ -486,7 +471,7 @@ const rules: Rule[] = [
     key: "shares-page",
     family: "page-same",
     make: (rng, ctx, target) => {
-      const refs = ctx.uniqueNamed.filter((s) => s.page === target.page && s.id !== target.id);
+      const refs = ctx.suspects.filter((s) => s.page === target.page && s.id !== target.id);
       if (refs.length === 0) return null;
       const ref = pick(rng, refs);
       return clue(

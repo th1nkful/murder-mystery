@@ -68,6 +68,9 @@ button {
   border: none;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  /* Without this, a browser holds each tap back to see whether a second one
+     is coming (double-tap to zoom), and fast tapping drops crossings-out. */
+  touch-action: manipulation;
 }
 
 button:disabled {
@@ -284,33 +287,43 @@ h3 {
 
 .tabs {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  border-bottom: 1px solid var(--line);
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid var(--line);
   background: var(--ink);
   position: sticky;
-  top: calc(58px + env(safe-area-inset-top));
-  z-index: 4;
+  bottom: 0;
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 5;
 }
 
 .tab {
-  padding: 11px 8px 10px;
+  padding: 10px 8px 12px;
   display: flex;
   flex-direction: column;
   gap: 2px;
   color: var(--dim);
-  border-bottom: 2px solid transparent;
+  border-top: 2px solid transparent;
   font-size: 0.95rem;
 }
 
 .tab.active {
   color: var(--text);
-  border-bottom-color: var(--gold);
+  border-top-color: var(--gold);
+  background: rgba(227, 178, 99, 0.06);
 }
 
 .tab-count {
   font-family: var(--mono);
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   color: var(--dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.mugshot {
+  display: block;
 }
 
 .panel {
@@ -318,18 +331,16 @@ h3 {
   padding: 16px var(--pad) 20px;
 }
 
-.game-foot {
+.game-status {
   position: sticky;
-  bottom: 0;
+  top: calc(58px + env(safe-area-inset-top));
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px var(--pad) calc(10px + env(safe-area-inset-bottom));
+  padding: 10px var(--pad);
   background-color: var(--ink);
-  background-image: linear-gradient(180deg, rgba(16, 14, 12, 0.75), var(--ink) 45%);
-  border-top: 1px solid var(--line);
-  backdrop-filter: blur(8px);
-  z-index: 5;
+  border-bottom: 1px solid var(--line);
+  z-index: 4;
 }
 
 .standing {
@@ -368,7 +379,235 @@ h3 {
   font-size: 0.92rem;
 }
 
+/* ---------------------------- case tab ---------------------------- */
+
+.scene-frame {
+  margin: 0 0 18px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background-color: var(--ink-2);
+  overflow: hidden;
+}
+
+.scene {
+  display: block;
+  width: 100%;
+  height: auto;
+  background-image: radial-gradient(80% 90% at 50% 20%, rgba(227, 178, 99, 0.07), transparent 70%);
+}
+
+.scene .dim {
+  fill: none;
+  stroke: rgba(243, 237, 225, 0.28);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.scene .accent {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.scene-frame figcaption {
+  padding: 9px 14px 11px;
+  border-top: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.victim-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.victim-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.victim-name {
+  font-family: var(--serif);
+  font-size: 1.35rem;
+  line-height: 1.15;
+}
+
+.victim-where {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.person-role {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.brief-caveat {
+  color: var(--muted);
+  font-size: 0.95rem !important;
+}
+
+.case-facts {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1px;
+  margin: 0 0 18px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.case-facts > div {
+  background: var(--ink-2);
+  padding: 11px 12px;
+}
+
+.case-facts dt {
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.case-facts dd {
+  margin: 3px 0 0;
+  font-family: var(--mono);
+  font-size: 1rem;
+}
+
+.brief-cta {
+  width: 100%;
+  padding: 13px 16px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(227, 178, 99, 0.4);
+  background: rgba(227, 178, 99, 0.09);
+  color: var(--gold);
+  font-size: 0.92rem;
+  text-align: left;
+}
+
 /* ---------------------------- clues ---------------------------- */
+
+.clues-lede {
+  margin: 0 0 16px;
+  font-family: var(--serif);
+  font-size: 0.98rem;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.clue-locked {
+  margin-top: 14px;
+  padding: 20px 18px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--ink-2);
+  text-align: center;
+}
+
+.lock-icon {
+  display: block;
+  font-size: 1.3rem;
+  color: var(--gold);
+  margin-bottom: 8px;
+}
+
+.lock-title {
+  margin: 0 0 8px;
+  font-family: var(--serif);
+  font-size: 1.1rem;
+}
+
+.lock-body {
+  margin: 0 0 10px;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.lock-body strong {
+  font-family: var(--mono);
+  color: var(--gold);
+}
+
+.lock-note {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--dim);
+  font-style: italic;
+}
+
+/* ---------------------------- locked-file toggle ---------------------------- */
+
+.mode-toggle {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  text-align: left;
+  width: 100%;
+  margin-top: 4px;
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--ink-2);
+}
+
+.mode-toggle.on {
+  border-color: rgba(227, 178, 99, 0.45);
+  background: rgba(227, 178, 99, 0.08);
+}
+
+.mode-box {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  border-radius: 5px;
+  border: 1px solid var(--line-strong);
+  display: grid;
+  place-items: center;
+  font-size: 0.78rem;
+  color: var(--gold);
+}
+
+.mode-toggle.on .mode-box {
+  border-color: var(--gold);
+}
+
+.mode-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.78rem;
+  color: var(--dim);
+  line-height: 1.5;
+}
+
+.mode-copy strong {
+  font-size: 0.92rem;
+  color: var(--text);
+  font-weight: 600;
+}
+
+
 
 .brief {
   background: var(--ink-2);
@@ -598,6 +837,18 @@ mark {
   color: var(--gold);
 }
 
+/* A page with nobody left on it recedes, so the eye skips it. */
+.page-pip.cleared {
+  opacity: 0.42;
+  border-style: dashed;
+}
+
+.page-pip.cleared .pip-number {
+  text-decoration: line-through;
+  text-decoration-color: var(--blood);
+}
+
+
 .sheet-paper {
   background-color: var(--paper);
   background-image: linear-gradient(180deg, var(--paper), var(--paper-2));
@@ -653,13 +904,35 @@ mark {
   color: rgba(43, 39, 33, 0.45);
 }
 
+.grid-col-head,
+.grid-row-head {
+  border-radius: 4px;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.grid-col-head:hover:not(:disabled),
+.grid-row-head:hover:not(:disabled) {
+  background: rgba(43, 39, 33, 0.1);
+  color: var(--paper-ink);
+}
+
+.grid-col-head.struck,
+.grid-row-head.struck {
+  color: rgba(201, 74, 59, 0.75);
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+}
+
 .grid-col-head {
   padding-bottom: 3px;
   border-bottom: 1px solid var(--paper-line);
+  border-radius: 4px 4px 0 0;
 }
 
 .name-cell {
   font-family: var(--mono);
+  user-select: none;
+  -webkit-user-select: none;
   font-size: clamp(0.6rem, 3.1vw, 0.82rem);
   color: var(--paper-ink);
   padding: 7px 2px;
@@ -884,6 +1157,14 @@ mark {
   line-height: 1.55;
 }
 
+.rules-para {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
 .rules.plain {
   color: var(--muted);
   font-size: 0.92rem;
@@ -926,6 +1207,22 @@ mark {
 .verdict h2 {
   font-size: clamp(2rem, 10vw, 2.8rem);
   margin: 8px 0 14px;
+}
+
+.verdict-mugshot {
+  margin: 4px 0 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.verdict-mugshot figcaption {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--blood);
 }
 
 .verdict-lede {

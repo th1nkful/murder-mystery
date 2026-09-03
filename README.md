@@ -23,15 +23,30 @@ page — and three sizes to play at:
 | Inspector  |    36 |    1,440 |  ~14  |
 
 Clues talk about the killer's name (its length, its letters, its vowels, double
-letters, where it falls alphabetically), about where they sit in the file (page
-number, row, column, which side of the page, whose page they are near), and
-about the file itself (whether their name appears more than once). Nothing is a
-riddle: every clue is a plain fact you can check by eye.
+letters, where it falls alphabetically) and about where they sit in the file
+(page number, row, column, which side of the page, whose page they are near).
+Nothing is a riddle: every clue is a plain fact you can check by eye, on the
+page in front of you.
 
-Tap a name to cross it out, tap it again to bring them back. Progress, the
-clock and your ticked-off clues are kept in the browser, so a case survives
-closing the tab. Stuck on a clue? The desk sergeant will apply it for you — it
-gets counted, and a case solved without help is worth more.
+Every name in a case is different, so a clue that points at someone — "a later
+page than Floyd" — can only mean one person.
+
+A case has three tabs: **Case** (the brief, the scene, who died), **Clues**,
+and **Suspects** (the pages). Tap a name to cross it out,
+tap again to bring them back, tap a row or column number to strike the lot, or
+clear a whole page from the toolbar; a page with nobody left fades out in the
+page strip. Progress, the clock and your
+ticked-off clues are kept in the browser, so a case survives closing the tab.
+Stuck on a clue? The app will apply it for you — it gets counted, and a case
+solved without help is worth more.
+
+### Locked files
+
+Tick **Locked file** before opening a case and it starts with three clues
+instead of all of them. The next clue opens once you have crossed out everyone
+the clues in your hand can rule out — measured by counting how many suspects
+still satisfy every revealed clue, so the file only gives up more once the work
+is actually done. Unlocking is sticky: a clue that is out stays out.
 
 ## What makes a case fair
 
@@ -48,6 +63,9 @@ once it satisfies all of these:
 - **Every clue is close to pulling its weight.** Clues are chosen to knock out
   roughly the share of suspects needed to land on one name across the whole
   list, and clues the rest of the list already implies are pruned out.
+- **No name appears twice.** The pool is larger than the biggest casefile, so
+  every suspect in a file is a distinct first name and a clue that names
+  someone is never ambiguous.
 
 These are enforced by the generator and locked in by the test suite in
 [`src/game/__tests__/generator.test.ts`](src/game/__tests__/generator.test.ts),
@@ -109,7 +127,9 @@ src/
     rng.ts        seeded PRNG and case codes
     storage.ts    progress, resume and stats in localStorage
     types.ts      shared types and the difficulty table
-  components/     the screens: home, clues, casefile, arrest, verdict
+  components/
+    art/          seeded mugshot silhouettes and line-art crime scenes
+    ...           the screens: home, case, clues, casefile, arrest, verdict
 ```
 
 Built with React, TypeScript and Vite. No runtime dependencies beyond React,
