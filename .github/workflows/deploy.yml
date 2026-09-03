@@ -1,7 +1,11 @@
-name: Deploy to GitHub Pages
+name: Build and deploy
 
 on:
   push:
+    branches: [main]
+  # Pull requests get the same lint/test/build, so a branch is checked before
+  # it can reach main — the deploy job below is skipped for them.
+  pull_request:
     branches: [main]
   workflow_dispatch:
 
@@ -12,7 +16,7 @@ permissions:
 
 # Let a running deploy finish; queue at most one more.
 concurrency:
-  group: pages
+  group: pages-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -29,12 +33,15 @@ jobs:
       - run: npm test
       - run: npm run build
       - uses: actions/configure-pages@v5
+        if: github.event_name != 'pull_request'
       - uses: actions/upload-pages-artifact@v3
+        if: github.event_name != 'pull_request'
         with:
           path: dist
 
   deploy:
     needs: build
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

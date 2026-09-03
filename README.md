@@ -77,9 +77,9 @@ one, or run both.
 
 ### GitHub Pages
 
-Already wired up in `.github/workflows/deploy.yml`: every push to `main` runs
-lint, tests and the build, then publishes `dist/`. It needs one setting turned
-on, once:
+Already wired up in `.github/workflows/deploy.yml`: pull requests into `main`
+run lint, tests and the build, and pushes to `main` do the same and then
+publish `dist/`. It needs one setting turned on, once:
 
 **Settings → Pages → Source → GitHub Actions**
 
