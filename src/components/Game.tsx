@@ -235,6 +235,41 @@ export default function Game({
     [detectiveCase.suspects, pushUndo, commit],
   );
 
+  /**
+   * Strike a whole row or column of a page — or put it back, if every name in
+   * it is already struck.
+   */
+  const toggleGroup = useCallback(
+    (matches: (suspect: Suspect) => boolean) => {
+      pushUndo();
+      commit((p) => {
+        if (p.status !== "playing") return p;
+        const group = detectiveCase.suspects.filter(matches);
+        if (group.length === 0) return p;
+        const next = new Set(p.eliminated);
+        const allStruck = group.every((suspect) => next.has(suspect.id));
+        for (const suspect of group) {
+          if (allStruck) next.delete(suspect.id);
+          else next.add(suspect.id);
+        }
+        return { ...p, eliminated: [...next] };
+      });
+    },
+    [detectiveCase.suspects, pushUndo, commit],
+  );
+
+  const toggleRow = useCallback(
+    (pageNumber: number, row: number) =>
+      toggleGroup((s) => s.page === pageNumber && s.row === row),
+    [toggleGroup],
+  );
+
+  const toggleColumn = useCallback(
+    (pageNumber: number, col: number) =>
+      toggleGroup((s) => s.page === pageNumber && s.col === col),
+    [toggleGroup],
+  );
+
   const undo = useCallback(() => {
     const previous = undoStack[undoStack.length - 1];
     if (!previous) return;
@@ -315,32 +350,20 @@ export default function Game({
         </button>
       </header>
 
-      <nav className="tabs" role="tablist">
-        {(
-          [
-            ["case", "Case", "the brief"],
-            [
-              "clues",
-              "Clues",
-              progress.locked
-                ? `${Math.min(progress.revealed, detectiveCase.clues.length)} of ${detectiveCase.clues.length} open`
-                : `${progress.checked.length}/${detectiveCase.clues.length}`,
-            ],
-            ["file", "Suspects", `${standing.toLocaleString()} left`],
-          ] as const
-        ).map(([id, label, meta]) => (
-          <button
-            key={id}
-            role="tab"
-            aria-selected={tab === id}
-            className={tab === id ? "tab active" : "tab"}
-            onClick={() => setTab(id)}
-          >
-            {label}
-            <span className="tab-count">{meta}</span>
+      <div className="game-status">
+        <span className="standing">
+          <strong>{standing.toLocaleString()}</strong> still standing
+        </span>
+        {progress.status === "playing" ? (
+          <button className="primary-button" onClick={() => setSheet("arrest")}>
+            Make an arrest
           </button>
-        ))}
-      </nav>
+        ) : (
+          <button className="primary-button" onClick={() => setVerdictOpen(true)}>
+            See the verdict
+          </button>
+        )}
+      </div>
 
       {tab === "case" && (
         <CasePanel
@@ -378,25 +401,39 @@ export default function Game({
           onToggle={toggleSuspect}
           onCrossOutPage={crossOutPage}
           onRestorePage={restorePage}
+          onToggleRow={toggleRow}
+          onToggleColumn={toggleColumn}
           onUndo={undoStack.length > 0 ? undo : undefined}
           onSearch={() => setSheet("search")}
         />
       )}
 
-      <footer className="game-foot">
-        <span className="standing">
-          <strong>{standing.toLocaleString()}</strong> still standing
-        </span>
-        {progress.status === "playing" ? (
-          <button className="primary-button" onClick={() => setSheet("arrest")}>
-            Make an arrest
+      <nav className="tabs" role="tablist">
+        {(
+          [
+            ["case", "Case", "the brief"],
+            [
+              "clues",
+              "Clues",
+              progress.locked
+                ? `${Math.min(progress.revealed, detectiveCase.clues.length)} of ${detectiveCase.clues.length} open`
+                : `${progress.checked.length}/${detectiveCase.clues.length}`,
+            ],
+            ["file", "Suspects", `${standing.toLocaleString()} left`],
+          ] as const
+        ).map(([id, label, meta]) => (
+          <button
+            key={id}
+            role="tab"
+            aria-selected={tab === id}
+            className={tab === id ? "tab active" : "tab"}
+            onClick={() => setTab(id)}
+          >
+            {label}
+            <span className="tab-count">{meta}</span>
           </button>
-        ) : (
-          <button className="primary-button" onClick={() => setVerdictOpen(true)}>
-            See the verdict
-          </button>
-        )}
-      </footer>
+        ))}
+      </nav>
 
       {sheet === "arrest" && (
         <ArrestSheet

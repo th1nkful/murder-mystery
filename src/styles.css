@@ -288,26 +288,28 @@ h3 {
 .tabs {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  border-bottom: 1px solid var(--line);
+  border-top: 1px solid var(--line);
   background: var(--ink);
   position: sticky;
-  top: calc(58px + env(safe-area-inset-top));
-  z-index: 4;
+  bottom: 0;
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 5;
 }
 
 .tab {
-  padding: 11px 8px 10px;
+  padding: 10px 8px 12px;
   display: flex;
   flex-direction: column;
   gap: 2px;
   color: var(--dim);
-  border-bottom: 2px solid transparent;
+  border-top: 2px solid transparent;
   font-size: 0.95rem;
 }
 
 .tab.active {
   color: var(--text);
-  border-bottom-color: var(--gold);
+  border-top-color: var(--gold);
+  background: rgba(227, 178, 99, 0.06);
 }
 
 .tab-count {
@@ -329,18 +331,16 @@ h3 {
   padding: 16px var(--pad) 20px;
 }
 
-.game-foot {
+.game-status {
   position: sticky;
-  bottom: 0;
+  top: calc(58px + env(safe-area-inset-top));
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px var(--pad) calc(10px + env(safe-area-inset-bottom));
+  padding: 10px var(--pad);
   background-color: var(--ink);
-  background-image: linear-gradient(180deg, rgba(16, 14, 12, 0.75), var(--ink) 45%);
-  border-top: 1px solid var(--line);
-  backdrop-filter: blur(8px);
-  z-index: 5;
+  border-bottom: 1px solid var(--line);
+  z-index: 4;
 }
 
 .standing {
@@ -845,11 +845,6 @@ mark {
   text-decoration-color: var(--blood);
 }
 
-.file-hint {
-  font-size: 0.72rem;
-  color: var(--dim);
-  font-style: italic;
-}
 
 .sheet-paper {
   background-color: var(--paper);
@@ -906,9 +901,29 @@ mark {
   color: rgba(43, 39, 33, 0.45);
 }
 
+.grid-col-head,
+.grid-row-head {
+  border-radius: 4px;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.grid-col-head:hover:not(:disabled),
+.grid-row-head:hover:not(:disabled) {
+  background: rgba(43, 39, 33, 0.1);
+  color: var(--paper-ink);
+}
+
+.grid-col-head.struck,
+.grid-row-head.struck {
+  color: rgba(201, 74, 59, 0.75);
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+}
+
 .grid-col-head {
   padding-bottom: 3px;
   border-bottom: 1px solid var(--paper-line);
+  border-radius: 4px 4px 0 0;
 }
 
 .name-cell {
