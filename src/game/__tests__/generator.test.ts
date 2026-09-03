@@ -137,8 +137,7 @@ describe.each(DIFFICULTIES)("a $label case", (difficulty) => {
   it("writes the case brief", () => {
     for (const c of cases) {
       expect(c.story.victim).toMatch(/^\S+ \S+$/);
-      expect(c.story.client).toMatch(/^\S+ \S+$/);
-      expect(c.story.victim).not.toBe(c.story.client);
+      expect(c.story.note).not.toHaveLength(0);
       expect(c.code).toMatch(/^[A-Z0-9]{4}-[A-Z0-9]{4}$/);
       // Every location must name a scene the art can actually draw.
       expect(SCENE_IDS).toContain(c.story.scene);

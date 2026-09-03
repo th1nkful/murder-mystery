@@ -91,8 +91,10 @@ const SCENES: Record<SceneId, { title: string; draw: React.ReactNode }> = {
     draw: (
       <>
         <path className="dim" d="M56 100V66a44 44 0 0 1 88 0v34" />
-        <path className="accent" d="M92 66a8 8 0 0 1 16 0v-24H92z" />
-        <path className="accent" d="M112 62l30-22" />
+        {/* the open slit, and a telescope tube leaning out through it */}
+        <path className="dim" d="M88 30v36M106 25v41" />
+        <path className="accent" d="M82 88l46-40" strokeWidth="5" />
+        <path className="accent" d="M120 40l16 14" />
         <circle className="dim" cx="34" cy="28" r="2.5" />
         <circle className="dim" cx="60" cy="18" r="2" />
         <circle className="dim" cx="170" cy="24" r="2.5" />

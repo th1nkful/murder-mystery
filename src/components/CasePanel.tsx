@@ -24,23 +24,19 @@ export default function CasePanel({ detectiveCase, locked, standing, onOpenClues
 
       <article className="brief">
         <h2>The file so far</h2>
-        <div className="brief-people">
-          <div className="person">
-            <Portrait seed={story.victim} tone="victim" size={78} />
+        <div className="victim-card">
+          <Portrait seed={story.victim} tone="victim" size={84} />
+          <div className="victim-detail">
             <span className="person-role">Victim</span>
-            <span className="person-name">{story.victim}</span>
-          </div>
-          <div className="person">
-            <Portrait seed={story.client} tone="client" size={78} />
-            <span className="person-role">Accused</span>
-            <span className="person-name">{story.client}</span>
+            <span className="victim-name">{story.victim}</span>
+            <span className="victim-where">found at {story.location}</span>
           </div>
         </div>
 
         <p>
-          <strong>{story.victim}</strong> was found dead at {story.location}. The police like{" "}
-          <strong>{story.client}</strong> for it — but before they were taken in, they pushed a
-          folder of names and a scribbled list of clues under your door.
+          Everyone in the building that night is in this folder, and one of them is the killer.
+          Clipped to the front of it is a list of things the room gave up — every one of them true
+          of whoever did this.
         </p>
         <p className="brief-caveat">
           The folder is a roll of first names and nothing else. No surnames, no addresses — just

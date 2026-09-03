@@ -44,7 +44,6 @@ export interface DetectiveCase {
 
 export interface CaseStory {
   victim: string;
-  client: string;
   /** Which scene illustration to draw. */
   scene: SceneId;
   location: string;

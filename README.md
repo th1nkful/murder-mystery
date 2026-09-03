@@ -31,8 +31,8 @@ page in front of you.
 Every name in a case is different, so a clue that points at someone — "a later
 page than Floyd" — can only mean one person.
 
-A case has three tabs: **Case** (the brief, the scene, who died and who is
-accused), **Clues**, and **Suspects** (the pages). Tap a name to cross it out,
+A case has three tabs: **Case** (the brief, the scene, who died), **Clues**,
+and **Suspects** (the pages). Tap a name to cross it out,
 tap again to bring them back, tap a row or column number to strike the lot, or
 clear a whole page from the toolbar; a page with nobody left fades out in the
 page strip. Progress, the clock and your

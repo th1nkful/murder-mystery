@@ -249,23 +249,20 @@ const LOCATIONS: { scene: SceneId; label: string }[] = [
   { scene: "train", label: "the last carriage of the 11:40 train" },
 ];
 
+/** Clipped to the front of the folder, in the hand of whoever worked the scene. */
 const NOTES = [
-  "I didn't do it. I wrote down everything I noticed before they took me in. It's all in here.",
-  "They were in the file all along. I know it. I just couldn't get to the end of the list in time.",
   "Whoever did this signed their name in the room. Not on paper — in the details.",
-  "Don't trust the confession. Trust the list. The list can't lie.",
-  "I only had minutes. I scribbled what I could remember. It should be enough. It has to be.",
+  "No prints, no weapon, no witness worth the paper. Only what has to be true of them.",
+  "Everyone in the building that night is in here, and not one soul more. Check it twice.",
+  "Fourteen hours of canvassing comes to this: a roll of names and a handful of facts.",
+  "The room gave up more than the living did. It is all written down. Work it through.",
+  "They are still on this list. Nobody left the building before we sealed it.",
 ];
 
 function buildStory(rng: Rng): CaseStory {
-  const victimFirst = pick(rng, NAME_POOL);
-  let clientFirst = pick(rng, NAME_POOL);
-  while (clientFirst === victimFirst) clientFirst = pick(rng, NAME_POOL);
-  const surnames = shuffle(rng, SURNAMES);
   const location = pick(rng, LOCATIONS);
   return {
-    victim: `${victimFirst} ${surnames[0]}`,
-    client: `${clientFirst} ${surnames[1]}`,
+    victim: `${pick(rng, NAME_POOL)} ${pick(rng, SURNAMES)}`,
     scene: location.scene,
     location: location.label,
     note: pick(rng, NOTES),

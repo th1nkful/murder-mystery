@@ -73,7 +73,8 @@ export default function VerdictOverlay({
             {wrongArrests > 0
               ? `${plural(wrongArrests, "wrong arrest")} and the trail went cold.`
               : "You handed the file back."}{" "}
-            {detectiveCase.story.client} is still in a cell.
+            Whoever killed {detectiveCase.story.victim} walked out of the building with everyone
+            else.
           </p>
         )}
 

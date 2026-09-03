@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { hashSeed, mulberry32 } from "../../game/rng";
 
-type Tone = "victim" | "killer" | "client";
+type Tone = "victim" | "killer";
 
 interface Props {
   /** Same seed draws the same figure every time. */
@@ -52,12 +52,11 @@ const COLLARS = [
 ];
 
 const TONES: Record<Tone, { figure: string; frame: string }> = {
-  victim: { figure: "#7c7468", frame: "rgba(243,237,225,0.22)" },
-  client: { figure: "var(--gold)", frame: "rgba(227,178,99,0.45)" },
+  victim: { figure: "#8b8074", frame: "rgba(243,237,225,0.24)" },
   killer: { figure: "var(--blood)", frame: "rgba(201,74,59,0.55)" },
 };
 
-export default function Portrait({ seed, tone = "client", size = 92, className }: Props) {
+export default function Portrait({ seed, tone = "victim", size = 92, className }: Props) {
   const figure = useMemo(() => {
     const rng = mulberry32(hashSeed("portrait:" + seed));
     const from = <T,>(items: readonly T[]) => items[Math.floor(rng() * items.length)];
