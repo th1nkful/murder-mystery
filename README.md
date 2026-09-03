@@ -23,15 +23,19 @@ page — and three sizes to play at:
 | Inspector  |    36 |    1,440 |  ~14  |
 
 Clues talk about the killer's name (its length, its letters, its vowels, double
-letters, where it falls alphabetically), about where they sit in the file (page
-number, row, column, which side of the page, whose page they are near), and
-about the file itself (whether their name appears more than once). Nothing is a
-riddle: every clue is a plain fact you can check by eye.
+letters, where it falls alphabetically) and about where they sit in the file
+(page number, row, column, which side of the page, whose page they are near).
+Nothing is a riddle: every clue is a plain fact you can check by eye, on the
+page in front of you.
+
+Every name in a case is different, so a clue that points at someone — "a later
+page than Floyd" — can only mean one person.
 
 A case has three tabs: **Case** (the brief, the scene, who died and who is
 accused), **Clues**, and **Suspects** (the pages). Tap a name to cross it out,
-tap again to bring them back, or clear a whole page from the toolbar; a page
-with nobody left fades out in the page strip. Progress, the clock and your
+tap again to bring them back, tap a row or column number to strike the lot, or
+clear a whole page from the toolbar; a page with nobody left fades out in the
+page strip. Progress, the clock and your
 ticked-off clues are kept in the browser, so a case survives closing the tab.
 Stuck on a clue? The app will apply it for you — it gets counted, and a case
 solved without help is worth more.
@@ -59,9 +63,9 @@ once it satisfies all of these:
 - **Every clue is close to pulling its weight.** Clues are chosen to knock out
   roughly the share of suspects needed to land on one name across the whole
   list, and clues the rest of the list already implies are pruned out.
-- **The file reads like a real list.** No name appears more than twice, at
-  least 85% of the names are distinct, and a name never appears twice on the
-  same page, where the repeat would look like a mistake.
+- **No name appears twice.** The pool is larger than the biggest casefile, so
+  every suspect in a file is a distinct first name and a clue that names
+  someone is never ambiguous.
 
 These are enforced by the generator and locked in by the test suite in
 [`src/game/__tests__/generator.test.ts`](src/game/__tests__/generator.test.ts),

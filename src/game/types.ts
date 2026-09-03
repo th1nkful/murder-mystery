@@ -10,7 +10,7 @@ export interface Suspect {
   col: number;
 }
 
-export type ClueCategory = "spelling" | "letters" | "page" | "position" | "file";
+export type ClueCategory = "spelling" | "letters" | "page" | "position";
 
 export interface Clue {
   /** Stable within a case; used as a React key and for progress storage. */
@@ -27,10 +27,6 @@ export interface CaseContext {
   pages: number;
   cols: number;
   rows: number;
-  /** How many times each name appears in the casefile. */
-  nameCounts: Map<string, number>;
-  /** Suspects whose name appears exactly once — safe to reference in a clue. */
-  uniqueNamed: Suspect[];
 }
 
 export interface DetectiveCase {

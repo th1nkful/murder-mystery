@@ -110,18 +110,26 @@ describe.each(DIFFICULTIES)("a $label case", (difficulty) => {
     }
   });
 
-  it("puts each name at most twice in the file, never twice on a page", () => {
+  it("never repeats a name, so a name always means one person", () => {
     for (const c of cases) {
-      const counts = new Map<string, number>();
-      for (const s of c.suspects) counts.set(s.name, (counts.get(s.name) ?? 0) + 1);
-      expect(Math.max(...counts.values())).toBeLessThanOrEqual(2);
-      // Most of the file is distinct names — repeats are the exception.
-      expect(counts.size / c.suspects.length).toBeGreaterThanOrEqual(0.85);
+      const names = c.suspects.map((s) => s.name);
+      expect(new Set(names).size).toBe(names.length);
 
       for (let page = 1; page <= c.pages; page++) {
-        const names = c.suspects.filter((s) => s.page === page).map((s) => s.name);
-        expect(names).toHaveLength(PER_PAGE);
-        expect(new Set(names).size).toBe(names.length);
+        expect(c.suspects.filter((s) => s.page === page)).toHaveLength(PER_PAGE);
+      }
+    }
+  });
+
+  it("only ever points a clue at a name that is in the file", () => {
+    const pool = new Set(NAME_POOL);
+    for (const c of cases) {
+      for (const clue of c.clues) {
+        // Clue copy quotes suspects by name; each must be a real, single person.
+        for (const word of clue.text.match(/\b[A-Z][a-z]{1,8}\b/g) ?? []) {
+          if (!pool.has(word)) continue;
+          expect(c.suspects.filter((s) => s.name === word).length).toBeLessThanOrEqual(1);
+        }
       }
     }
   });

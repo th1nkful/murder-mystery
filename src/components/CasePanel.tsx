@@ -44,7 +44,7 @@ export default function CasePanel({ detectiveCase, locked, standing, onOpenClues
         </p>
         <p className="brief-caveat">
           The folder is a roll of first names and nothing else. No surnames, no addresses — just
-          who was in the building, and where they sit on the page.
+          who was in the building, and where they sit on the page. No two the same.
         </p>
         <blockquote>“{story.note}”</blockquote>
       </article>

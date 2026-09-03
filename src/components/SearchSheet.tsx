@@ -21,15 +21,10 @@ export default function SearchSheet({ detectiveCase, eliminated, onSelect, onClo
     return detectiveCase.suspects.filter((s) => s.name.toLowerCase().startsWith(trimmed));
   }, [detectiveCase.suspects, trimmed]);
 
-  const exact = useMemo(
-    () => matches.filter((s) => s.name.toLowerCase() === trimmed).length,
-    [matches, trimmed],
-  );
-
   return (
     <Sheet
       title="Find a name"
-      subtitle="Useful for the clues that ask how often a name turns up."
+      subtitle="Jump straight to where someone sits in the file."
       onClose={onClose}
     >
       <input
@@ -40,12 +35,6 @@ export default function SearchSheet({ detectiveCase, eliminated, onSelect, onClo
         placeholder="Start typing a name…"
         onChange={(e) => setQuery(e.target.value)}
       />
-      {exact > 0 && (
-        <p className="search-summary">
-          That exact name appears <strong>{exact}</strong> {exact === 1 ? "time" : "times"} in this
-          casefile.
-        </p>
-      )}
       <SuspectList
         suspects={matches.slice(0, LIMIT)}
         eliminated={eliminated}

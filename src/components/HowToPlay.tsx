@@ -37,12 +37,12 @@ export default function HowToPlay({ onClose }: { onClose: () => void }) {
         </li>
         <li>Rows are numbered down the left of a page, columns across the top.</li>
         <li>
-          Clues that name another suspect — “a later page than Floyd” — always refer to someone who
-          appears in the file exactly once, so there is no ambiguity.
+          Clues that name another suspect — “a later page than Floyd” — point at the one person in
+          the file with that name.
         </li>
         <li>
-          The casefile lists first names only — that is all the folder holds. Two people can share
-          one, and the clues will separate them by where they sit in the file.
+          The casefile lists first names only — that is all the folder holds — and every one of
+          them is different, so a name always means one person.
         </li>
         <li>
           Stuck? “apply this for me” crosses out everyone a clue rules out. It is counted, and a
