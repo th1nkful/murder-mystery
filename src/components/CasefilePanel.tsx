@@ -10,6 +10,8 @@ interface Props {
   killerId: number;
   onPage: (page: number) => void;
   onToggle: (id: number) => void;
+  onCrossOutPage: (page: number) => void;
+  onRestorePage: (page: number) => void;
   onUndo?: () => void;
   onSearch: () => void;
 }
@@ -23,6 +25,8 @@ export default function CasefilePanel({
   killerId,
   onPage,
   onToggle,
+  onCrossOutPage,
+  onRestorePage,
   onUndo,
   onSearch,
 }: Props) {
@@ -42,6 +46,7 @@ export default function CasefilePanel({
     () => suspects.slice((page - 1) * perPage, page * perPage),
     [suspects, page, perPage],
   );
+  const pageCleared = standingPerPage[page] === 0;
 
   useEffect(() => {
     stripRef.current
@@ -82,14 +87,38 @@ export default function CasefilePanel({
         </button>
       </div>
 
+      <div className="file-toolbar">
+        {pageCleared ? (
+          <button className="chip" onClick={() => onRestorePage(page)} disabled={revealed}>
+            Bring page {page} back
+          </button>
+        ) : (
+          <button className="chip" onClick={() => onCrossOutPage(page)} disabled={revealed}>
+            Cross out the rest of page {page}
+          </button>
+        )}
+        <span className="toolbar-spacer" />
+        <span className="file-hint">tap a name to strike it</span>
+      </div>
+
       <div className="page-strip" ref={stripRef}>
         {Array.from({ length: pages }, (_, i) => i + 1).map((n) => (
           <button
             key={n}
             data-active={n === page}
-            className={n === page ? "page-pip active" : "page-pip"}
+            className={[
+              "page-pip",
+              n === page ? "active" : "",
+              standingPerPage[n] === 0 ? "cleared" : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
             onClick={() => onPage(n)}
-            aria-label={`Page ${n}, ${standingPerPage[n]} still standing`}
+            aria-label={
+              standingPerPage[n] === 0
+                ? `Page ${n}, all crossed out`
+                : `Page ${n}, ${standingPerPage[n]} still standing`
+            }
           >
             <span className="pip-number">{n}</span>
             <span className="pip-count">{standingPerPage[n]}</span>
@@ -124,7 +153,11 @@ export default function CasefilePanel({
             />
           ))}
         </div>
-        <p className="paper-foot">Tap a name to cross it out. Tap again to bring them back.</p>
+        <p className="paper-foot">
+          {pageCleared
+            ? "Nobody left on this page."
+            : "Tap a name to cross it out. Tap again to bring them back."}
+        </p>
       </div>
     </div>
   );

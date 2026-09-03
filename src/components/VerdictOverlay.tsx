@@ -4,6 +4,7 @@ import { getDifficulty } from "../game/types";
 import { randomSeed } from "../game/generator";
 import { formatDuration, plural } from "../game/format";
 import type { CaseRef } from "../game/storage";
+import Portrait from "./art/Portrait";
 
 interface Props {
   detectiveCase: DetectiveCase;
@@ -59,6 +60,10 @@ export default function VerdictOverlay({
       <div className="verdict-inner">
         <p className="kicker">{solved ? "Case closed" : "Case cold"}</p>
         <h2>{solved ? "You got them." : "They walked."}</h2>
+        <figure className="verdict-mugshot">
+          <Portrait seed={`${detectiveCase.code}:${killer.id}`} tone="killer" size={104} />
+          <figcaption>{killer.name}</figcaption>
+        </figure>
         <p className="verdict-lede">
           The killer was <strong>{killer.name}</strong> — page {killer.page}, row {killer.row},
           column {killer.col}.

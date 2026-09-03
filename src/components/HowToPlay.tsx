@@ -11,13 +11,22 @@ export default function HowToPlay({ onClose }: { onClose: () => void }) {
         <li>
           <strong>Work the casefile.</strong> Names are laid out in a grid, four columns wide and
           ten rows deep, on numbered pages. Tap anyone a clue rules out to cross them off. Tap them
-          again if you change your mind.
+          again if you change your mind, or cross out a whole page at once from the toolbar. A
+          page with nobody left on it fades out in the page strip.
         </li>
         <li>
           <strong>One name survives.</strong> Exactly one suspect in the file fits every clue.
           When you are sure, make the arrest. You get three tries.
         </li>
       </ol>
+
+      <h3>Locked files</h3>
+      <p className="rules-para">
+        Tick <em>Locked file</em> before opening a case and you start with three clues instead of
+        the lot. The next clue opens when you have crossed out everyone the clues in your hand can
+        rule out — so the file only gives up more once you have earned it. Once a clue is out, it
+        stays out.
+      </p>
 
       <h3>The small print</h3>
       <ul className="rules plain">
@@ -32,12 +41,12 @@ export default function HowToPlay({ onClose }: { onClose: () => void }) {
           appears in the file exactly once, so there is no ambiguity.
         </li>
         <li>
-          Names repeat. Two people can share a first name; the clues will separate them by where
-          they sit in the file.
+          The casefile lists first names only — that is all the folder holds. Two people can share
+          one, and the clues will separate them by where they sit in the file.
         </li>
         <li>
-          Stuck? “Let the desk sergeant do it” applies a clue for you and crosses out everyone it
-          rules out. It is counted, and a case solved without it is worth more.
+          Stuck? “apply this for me” crosses out everyone a clue rules out. It is counted, and a
+          case solved without it is worth more.
         </li>
       </ul>
     </Sheet>

@@ -1,4 +1,4 @@
-import type { DifficultyId } from "./types";
+import { STARTING_CLUES, type DifficultyId } from "./types";
 
 const PROGRESS_PREFIX = "murder-mystery:case:v1:";
 const CURRENT_KEY = "murder-mystery:current:v1";
@@ -9,6 +9,10 @@ export type CaseStatus = "playing" | "solved" | "failed";
 export interface CaseProgress {
   seed: string;
   difficulty: DifficultyId;
+  /** Locked file: clues are revealed a few at a time as suspects are ruled out. */
+  locked: boolean;
+  /** How many clues are unlocked. Only meaningful in a locked file. */
+  revealed: number;
   /** Suspect ids the player has crossed out. */
   eliminated: number[];
   /** Clue ids the player has ticked off. */
@@ -60,7 +64,11 @@ function write(key: string, value: unknown): void {
 }
 
 export function loadProgress(ref: CaseRef): CaseProgress | null {
-  return read<CaseProgress>(progressKey(ref));
+  const stored = read<Partial<CaseProgress>>(progressKey(ref));
+  if (!stored) return null;
+  // Merged onto a fresh record, so a case saved before locked files existed —
+  // or any other older shape — still loads with sane values.
+  return { ...newProgress(ref), ...stored };
 }
 
 export function saveProgress(progress: CaseProgress): void {
@@ -114,9 +122,11 @@ export function recordSolved(difficulty: DifficultyId, elapsedMs: number, assist
   });
 }
 
-export function newProgress(ref: CaseRef): CaseProgress {
+export function newProgress(ref: CaseRef, locked = false): CaseProgress {
   return {
     ...ref,
+    locked,
+    revealed: STARTING_CLUES,
     eliminated: [],
     checked: [],
     assists: [],

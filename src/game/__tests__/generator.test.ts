@@ -1,7 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { generateCase } from "../generator";
 import { NAME_POOL } from "../names";
-import { DIFFICULTIES, PER_PAGE, type Clue, type DetectiveCase, type Suspect } from "../types";
+import {
+  DIFFICULTIES,
+  PER_PAGE,
+  type Clue,
+  type DetectiveCase,
+  type SceneId,
+  type Suspect,
+} from "../types";
+
+const SCENE_IDS: SceneId[] = [
+  "hotel", "flat", "pier", "library", "theatre",
+  "ferry", "observatory", "viaduct", "greenhouse", "train",
+];
 
 const SEEDS = Array.from({ length: 25 }, (_, i) => `test-seed-${i}`);
 
@@ -24,6 +36,11 @@ describe("name pool", () => {
 
   it("has no duplicates", () => {
     expect(new Set(NAME_POOL).size).toBe(NAME_POOL.length);
+  });
+
+  it("is bigger than the largest casefile, so a file need not repeat itself", () => {
+    const largest = Math.max(...DIFFICULTIES.map((d) => d.pages * PER_PAGE));
+    expect(NAME_POOL.length).toBeGreaterThan(largest);
   });
 });
 
@@ -93,12 +110,30 @@ describe.each(DIFFICULTIES)("a $label case", (difficulty) => {
     }
   });
 
+  it("puts each name at most twice in the file, never twice on a page", () => {
+    for (const c of cases) {
+      const counts = new Map<string, number>();
+      for (const s of c.suspects) counts.set(s.name, (counts.get(s.name) ?? 0) + 1);
+      expect(Math.max(...counts.values())).toBeLessThanOrEqual(2);
+      // Most of the file is distinct names — repeats are the exception.
+      expect(counts.size / c.suspects.length).toBeGreaterThanOrEqual(0.85);
+
+      for (let page = 1; page <= c.pages; page++) {
+        const names = c.suspects.filter((s) => s.page === page).map((s) => s.name);
+        expect(names).toHaveLength(PER_PAGE);
+        expect(new Set(names).size).toBe(names.length);
+      }
+    }
+  });
+
   it("writes the case brief", () => {
     for (const c of cases) {
       expect(c.story.victim).toMatch(/^\S+ \S+$/);
       expect(c.story.client).toMatch(/^\S+ \S+$/);
       expect(c.story.victim).not.toBe(c.story.client);
       expect(c.code).toMatch(/^[A-Z0-9]{4}-[A-Z0-9]{4}$/);
+      // Every location must name a scene the art can actually draw.
+      expect(SCENE_IDS).toContain(c.story.scene);
     }
   });
 });

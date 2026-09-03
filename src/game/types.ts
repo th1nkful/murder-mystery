@@ -49,9 +49,23 @@ export interface DetectiveCase {
 export interface CaseStory {
   victim: string;
   client: string;
+  /** Which scene illustration to draw. */
+  scene: SceneId;
   location: string;
   note: string;
 }
+
+export type SceneId =
+  | "hotel"
+  | "flat"
+  | "pier"
+  | "library"
+  | "theatre"
+  | "ferry"
+  | "observatory"
+  | "viaduct"
+  | "greenhouse"
+  | "train";
 
 export type DifficultyId = "rookie" | "detective" | "inspector";
 
@@ -63,6 +77,9 @@ export interface Difficulty {
   /** Roughly how many clues the generator aims for. */
   targetClues: number;
 }
+
+/** How many clues a locked file shows before the player has to earn the rest. */
+export const STARTING_CLUES = 3;
 
 export const PAGE_COLS = 4;
 export const PAGE_ROWS = 10;

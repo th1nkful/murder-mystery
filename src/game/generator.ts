@@ -11,6 +11,7 @@ import {
   type Clue,
   type DetectiveCase,
   type DifficultyId,
+  type SceneId,
   type Suspect,
 } from "./types";
 
@@ -19,14 +20,17 @@ import {
 /* ------------------------------------------------------------------ */
 
 /**
- * Fill `pages` pages with names. The name pool is deliberately smaller than
- * the number of slots, so some names repeat — that keeps "their name appears
- * only once in the casefile" a meaningful clue, and it is how a real list of
- * first names would look.
+ * Fill `pages` pages with names.
+ *
+ * Most names are distinct. A slice of the file repeats, because "their name
+ * appears only once in the casefile" has to mean something and because a real
+ * list of first names would repeat — but a name never appears twice on the
+ * same page, where a reader would see the repeat side by side and take it for
+ * a mistake.
  */
 function buildSuspects(rng: Rng, pages: number): Suspect[] {
   const total = pages * PER_PAGE;
-  const distinct = Math.min(NAME_POOL.length, Math.max(60, Math.round(total * 0.7)));
+  const distinct = Math.min(NAME_POOL.length, Math.max(60, Math.round(total * 0.9)));
   const cast = shuffle(rng, NAME_POOL).slice(0, distinct);
 
   const bag: string[] = [];
@@ -37,7 +41,23 @@ function buildSuspects(rng: Rng, pages: number): Suspect[] {
     }
   }
 
-  const placed = shuffle(rng, bag);
+  const pool = shuffle(rng, bag);
+  const placed: string[] = [];
+  for (let page = 0; page < pages; page++) {
+    const onThisPage = new Set<string>();
+    for (let slot = 0; slot < PER_PAGE; slot++) {
+      // Prefer a name this page hasn't used; near the end of the bag there may
+      // be no such name left, and then a repeat is better than an empty cell.
+      let index = pool.findIndex((name) => !onThisPage.has(name));
+      if (index === -1) index = pool.length - 1;
+      const [name] = pool.splice(index, 1);
+      onThisPage.add(name);
+      placed.push(name);
+    }
+  }
+
+  repairPageRepeats(placed, pages);
+
   return placed.map((name, i) => ({
     id: i,
     name,
@@ -45,6 +65,37 @@ function buildSuspects(rng: Rng, pages: number): Suspect[] {
     row: Math.floor((i % PER_PAGE) / PAGE_COLS) + 1,
     col: (i % PAGE_COLS) + 1,
   }));
+}
+
+/**
+ * Dealing names out page by page can strand a repeat on the last page or two,
+ * once the bag holds nothing else. Swap those with names from a page where
+ * neither name causes a clash, in place.
+ */
+function repairPageRepeats(placed: string[], pages: number): void {
+  const pageOf = (index: number) => Math.floor(index / PER_PAGE);
+  const namesOn = (page: number) =>
+    new Set(placed.slice(page * PER_PAGE, (page + 1) * PER_PAGE));
+
+  for (let page = 0; page < pages; page++) {
+    const seen = new Set<string>();
+    for (let i = page * PER_PAGE; i < (page + 1) * PER_PAGE; i++) {
+      if (!seen.has(placed[i])) {
+        seen.add(placed[i]);
+        continue;
+      }
+      // placed[i] is a second copy on this page — find somewhere to trade it.
+      for (let j = 0; j < placed.length; j++) {
+        const other = pageOf(j);
+        if (other === page) continue;
+        if (seen.has(placed[j])) continue; // would clash here
+        if (namesOn(other).has(placed[i])) continue; // would clash there
+        [placed[i], placed[j]] = [placed[j], placed[i]];
+        break;
+      }
+      seen.add(placed[i]);
+    }
+  }
 }
 
 function buildContext(suspects: Suspect[], pages: number): CaseContext {
@@ -253,12 +304,17 @@ const SURNAMES = [
   "Vasquez", "Winterbourne", "Ashby", "Blackwood", "Corvina", "Delacroix", "Everly",
 ];
 
-const LOCATIONS = [
-  "the Brackwater Hotel", "a locked flat on Sable Row", "the old Pier Ballroom",
-  "the Ravenscourt Library", "a dressing room at the Gaslight Theatre",
-  "the night ferry to Kellsholm", "the Harlow Street observatory",
-  "a lock-up beneath the viaduct", "the greenhouse at Wilder House",
-  "the last carriage of the 11:40 train",
+const LOCATIONS: { scene: SceneId; label: string }[] = [
+  { scene: "hotel", label: "the Brackwater Hotel" },
+  { scene: "flat", label: "a locked flat on Sable Row" },
+  { scene: "pier", label: "the old Pier Ballroom" },
+  { scene: "library", label: "the Ravenscourt Library" },
+  { scene: "theatre", label: "a dressing room at the Gaslight Theatre" },
+  { scene: "ferry", label: "the night ferry to Kellsholm" },
+  { scene: "observatory", label: "the Harlow Street observatory" },
+  { scene: "viaduct", label: "a lock-up beneath the viaduct" },
+  { scene: "greenhouse", label: "the greenhouse at Wilder House" },
+  { scene: "train", label: "the last carriage of the 11:40 train" },
 ];
 
 const NOTES = [
@@ -274,10 +330,12 @@ function buildStory(rng: Rng): CaseStory {
   let clientFirst = pick(rng, NAME_POOL);
   while (clientFirst === victimFirst) clientFirst = pick(rng, NAME_POOL);
   const surnames = shuffle(rng, SURNAMES);
+  const location = pick(rng, LOCATIONS);
   return {
     victim: `${victimFirst} ${surnames[0]}`,
     client: `${clientFirst} ${surnames[1]}`,
-    location: pick(rng, LOCATIONS),
+    scene: location.scene,
+    location: location.label,
     note: pick(rng, NOTES),
   };
 }

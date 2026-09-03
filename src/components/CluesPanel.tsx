@@ -7,6 +7,12 @@ interface Props {
   checked: string[];
   assists: string[];
   locked: boolean;
+  /** In a locked file, how many clues are unlocked. */
+  revealed: number;
+  /** Suspects still standing, and how few are needed to unlock the next clue. */
+  standing: number;
+  unlockAt: number | null;
+  disabled: boolean;
   onToggle: (clueId: string) => void;
   onApply: (clueId: string) => void;
 }
@@ -16,30 +22,26 @@ export default function CluesPanel({
   checked,
   assists,
   locked,
+  revealed,
+  standing,
+  unlockAt,
+  disabled,
   onToggle,
   onApply,
 }: Props) {
   const [confirming, setConfirming] = useState<string | null>(null);
-  const { story } = detectiveCase;
+  const visible = locked ? detectiveCase.clues.slice(0, revealed) : detectiveCase.clues;
+  const hidden = detectiveCase.clues.length - visible.length;
 
   return (
     <div className="panel clues-panel">
-      <article className="brief">
-        <h2>The file so far</h2>
-        <p>
-          <strong>{story.victim}</strong> was found dead at {story.location}. The police like{" "}
-          <strong>{story.client}</strong> for it — but before they were taken in, they pushed a
-          folder of names and a scribbled list under your door.
-        </p>
-        <blockquote>“{story.note}”</blockquote>
-        <p className="brief-task">
-          Every clue below is true of the killer. Cross out everyone in the casefile it rules out.
-          One name survives all {detectiveCase.clues.length}.
-        </p>
-      </article>
+      <p className="clues-lede">
+        Every clue is true of the killer. Cross out everyone in the casefile it rules out — one
+        name survives all {detectiveCase.clues.length}.
+      </p>
 
       <ol className="clue-list">
-        {detectiveCase.clues.map((clue, index) => {
+        {visible.map((clue, index) => {
           const isChecked = checked.includes(clue.id);
           const wasAssisted = assists.includes(clue.id);
           return (
@@ -59,7 +61,7 @@ export default function CluesPanel({
                   {isChecked ? "✓" : ""}
                 </span>
               </button>
-              {!locked && !wasAssisted && (
+              {!disabled && !wasAssisted && (
                 <div className="clue-assist">
                   {confirming === clue.id ? (
                     <>
@@ -89,6 +91,30 @@ export default function CluesPanel({
           );
         })}
       </ol>
+
+      {hidden > 0 && (
+        <div className="clue-locked">
+          <span className="lock-icon" aria-hidden="true">
+            ✦
+          </span>
+          <p className="lock-title">
+            {hidden === 1 ? "One more clue" : `${hidden} more clues`} in the envelope
+          </p>
+          {unlockAt != null && (
+            <p className="lock-body">
+              The next one opens once <strong>{unlockAt.toLocaleString()}</strong> or fewer
+              suspects are left standing. You have{" "}
+              <strong>{standing.toLocaleString()}</strong> —{" "}
+              {standing > unlockAt
+                ? `${(standing - unlockAt).toLocaleString()} still to rule out.`
+                : "opening now."}
+            </p>
+          )}
+          <p className="lock-note">
+            Work the clues you have. The file gives up the rest as you narrow it down.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

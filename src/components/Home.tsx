@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { DIFFICULTIES, getDifficulty, type DifficultyId } from "../game/types";
+import { useMemo, useState } from "react";
+import { DIFFICULTIES, STARTING_CLUES, getDifficulty, type DifficultyId } from "../game/types";
 import { randomSeed, todaySeed } from "../game/generator";
 import { caseCode } from "../game/rng";
 import { loadProgress, loadStats, type CaseRef } from "../game/storage";
@@ -7,11 +7,12 @@ import { formatDuration } from "../game/format";
 
 interface Props {
   resumable: CaseRef | null;
-  onOpenCase: (ref: CaseRef) => void;
+  onOpenCase: (ref: CaseRef, locked?: boolean) => void;
   onShowRules: () => void;
 }
 
 export default function Home({ resumable, onOpenCase, onShowRules }: Props) {
+  const [locked, setLocked] = useState(false);
   const stats = useMemo(() => loadStats(), []);
   const resume = useMemo(() => {
     if (!resumable) return null;
@@ -59,7 +60,7 @@ export default function Home({ resumable, onOpenCase, onShowRules }: Props) {
             <button
               key={difficulty.id}
               className="card card-difficulty"
-              onClick={() => onOpenCase({ seed: randomSeed(), difficulty: difficulty.id })}
+              onClick={() => onOpenCase({ seed: randomSeed(), difficulty: difficulty.id }, locked)}
             >
               <span className="card-title">{difficulty.label}</span>
               <span className="card-meta">{difficulty.blurb}</span>
@@ -67,10 +68,27 @@ export default function Home({ resumable, onOpenCase, onShowRules }: Props) {
             </button>
           ))}
         </div>
+
+        <button
+          className={locked ? "mode-toggle on" : "mode-toggle"}
+          onClick={() => setLocked((v) => !v)}
+          aria-pressed={locked}
+        >
+          <span className="mode-box" aria-hidden="true">
+            {locked ? "✓" : ""}
+          </span>
+          <span className="mode-copy">
+            <strong>Locked file</strong>
+            <span>
+              Start with {STARTING_CLUES} clues. Each one after that opens when you have ruled out
+              everyone the clues you hold can rule out.
+            </span>
+          </span>
+        </button>
       </section>
 
       <section className="home-section">
-        <button className="card card-daily" onClick={() => onOpenCase(daily)}>
+        <button className="card card-daily" onClick={() => onOpenCase(daily, locked)}>
           <span className="card-tag">{dailyDone ? "Solved today" : "Today's case"}</span>
           <span className="card-title">The daily file</span>
           <span className="card-meta">

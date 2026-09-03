@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { generateCase } from "../game/generator";
-import { getDifficulty, type Suspect } from "../game/types";
+import { getDifficulty, type Clue, type Suspect } from "../game/types";
 import {
   loadProgress,
   newProgress,
@@ -11,6 +11,7 @@ import {
   type CaseRef,
 } from "../game/storage";
 import { formatDuration, plural } from "../game/format";
+import CasePanel from "./CasePanel";
 import CluesPanel from "./CluesPanel";
 import CasefilePanel from "./CasefilePanel";
 import ArrestSheet from "./ArrestSheet";
@@ -24,18 +25,27 @@ const TIMER_SAVE_MS = 10_000;
 
 interface Props {
   caseRef: CaseRef;
+  /** Only applies to a case with no saved progress; a resumed case keeps its own mode. */
+  lockedByDefault: boolean;
   onExit: () => void;
-  onOpenCase: (ref: CaseRef) => void;
+  onOpenCase: (ref: CaseRef, locked?: boolean) => void;
   onShowRules: () => void;
 }
 
 type SheetKind = "arrest" | "search" | "menu" | null;
+type Tab = "case" | "clues" | "file";
 
 function progressStatus(caseRef: CaseRef) {
   return loadProgress(caseRef)?.status ?? "playing";
 }
 
-export default function Game({ caseRef, onExit, onOpenCase, onShowRules }: Props) {
+export default function Game({
+  caseRef,
+  lockedByDefault,
+  onExit,
+  onOpenCase,
+  onShowRules,
+}: Props) {
   const detectiveCase = useMemo(
     () => generateCase(caseRef.seed, caseRef.difficulty),
     [caseRef.seed, caseRef.difficulty],
@@ -43,10 +53,10 @@ export default function Game({ caseRef, onExit, onOpenCase, onShowRules }: Props
   const difficulty = getDifficulty(caseRef.difficulty);
 
   const [progress, setProgress] = useState<CaseProgress>(
-    () => loadProgress(caseRef) ?? newProgress(caseRef),
+    () => loadProgress(caseRef) ?? newProgress(caseRef, lockedByDefault),
   );
   const [elapsed, setElapsed] = useState(progress.elapsedMs);
-  const [tab, setTab] = useState<"clues" | "file">("clues");
+  const [tab, setTab] = useState<Tab>("case");
   const [page, setPage] = useState(1);
   const [sheet, setSheet] = useState<SheetKind>(null);
   const [spotlight, setSpotlight] = useState<number | null>(null);
@@ -56,6 +66,29 @@ export default function Game({ caseRef, onExit, onOpenCase, onShowRules }: Props
   const eliminated = useMemo(() => new Set(progress.eliminated), [progress.eliminated]);
   const standing = detectiveCase.suspects.length - eliminated.size;
   const killer = detectiveCase.suspects[detectiveCase.killerId];
+
+  /**
+   * In a locked file the next clue is earned: it opens once the player has
+   * ruled out everyone the clues they already hold can rule out. Counting
+   * survivors of the revealed clues gives that target directly.
+   */
+  const survivorsOfRevealed = useCallback(
+    (count: number) => {
+      const revealedClues = detectiveCase.clues.slice(0, count);
+      return detectiveCase.suspects.filter((s: Suspect) =>
+        revealedClues.every((c: Clue) => c.test(s)),
+      ).length;
+    },
+    [detectiveCase],
+  );
+
+  const unlockAt = useMemo(
+    () =>
+      progress.locked && progress.revealed < detectiveCase.clues.length
+        ? survivorsOfRevealed(progress.revealed)
+        : null,
+    [progress.locked, progress.revealed, detectiveCase.clues.length, survivorsOfRevealed],
+  );
 
   /* ---------------- persistence ---------------- */
 
@@ -100,20 +133,47 @@ export default function Game({ caseRef, onExit, onOpenCase, onShowRules }: Props
 
   /* ---------------- actions ---------------- */
 
+  /**
+   * Every change to the crossed-out names runs through here, so a locked file
+   * opens the next clue the moment it is earned. Unlocking is sticky: once a
+   * clue is out of the envelope it stays out, even if names are put back.
+   */
+  const commit = useCallback(
+    (change: (p: CaseProgress) => CaseProgress) => {
+      setProgress((previous) => {
+        const next = change(previous);
+        if (!next.locked || next.status !== "playing") return next;
+        let revealed = next.revealed;
+        const stillStanding = detectiveCase.suspects.length - next.eliminated.length;
+        while (
+          revealed < detectiveCase.clues.length &&
+          stillStanding <= survivorsOfRevealed(revealed)
+        ) {
+          revealed++;
+        }
+        return revealed === next.revealed ? next : { ...next, revealed };
+      });
+    },
+    [detectiveCase, survivorsOfRevealed],
+  );
+
   const pushUndo = useCallback(() => {
     setUndoStack((stack) => [...stack.slice(-19), progress.eliminated]);
   }, [progress.eliminated]);
 
-  const toggleSuspect = useCallback((id: number) => {
-    setProgress((p) => {
-      if (p.status !== "playing") return p;
-      const has = p.eliminated.includes(id);
-      return {
-        ...p,
-        eliminated: has ? p.eliminated.filter((x) => x !== id) : [...p.eliminated, id],
-      };
-    });
-  }, []);
+  const toggleSuspect = useCallback(
+    (id: number) => {
+      commit((p) => {
+        if (p.status !== "playing") return p;
+        const has = p.eliminated.includes(id);
+        return {
+          ...p,
+          eliminated: has ? p.eliminated.filter((x) => x !== id) : [...p.eliminated, id],
+        };
+      });
+    },
+    [commit],
+  );
 
   const toggleClue = useCallback((clueId: string) => {
     setProgress((p) => ({
@@ -129,7 +189,7 @@ export default function Game({ caseRef, onExit, onOpenCase, onShowRules }: Props
       const clue = detectiveCase.clues.find((c) => c.id === clueId);
       if (!clue) return;
       pushUndo();
-      setProgress((p) => {
+      commit((p) => {
         if (p.status !== "playing") return p;
         const next = new Set(p.eliminated);
         for (const suspect of detectiveCase.suspects) {
@@ -143,17 +203,44 @@ export default function Game({ caseRef, onExit, onOpenCase, onShowRules }: Props
         };
       });
     },
-    [detectiveCase, pushUndo],
+    [detectiveCase, pushUndo, commit],
+  );
+
+  const crossOutPage = useCallback(
+    (page: number) => {
+      pushUndo();
+      commit((p) => {
+        if (p.status !== "playing") return p;
+        const next = new Set(p.eliminated);
+        for (const suspect of detectiveCase.suspects) {
+          if (suspect.page === page) next.add(suspect.id);
+        }
+        return { ...p, eliminated: [...next] };
+      });
+    },
+    [detectiveCase.suspects, pushUndo, commit],
+  );
+
+  const restorePage = useCallback(
+    (page: number) => {
+      pushUndo();
+      commit((p) => {
+        if (p.status !== "playing") return p;
+        const onPage = new Set(
+          detectiveCase.suspects.filter((s) => s.page === page).map((s) => s.id),
+        );
+        return { ...p, eliminated: p.eliminated.filter((id) => !onPage.has(id)) };
+      });
+    },
+    [detectiveCase.suspects, pushUndo, commit],
   );
 
   const undo = useCallback(() => {
-    setUndoStack((stack) => {
-      if (stack.length === 0) return stack;
-      const previous = stack[stack.length - 1];
-      setProgress((p) => ({ ...p, eliminated: previous }));
-      return stack.slice(0, -1);
-    });
-  }, []);
+    const previous = undoStack[undoStack.length - 1];
+    if (!previous) return;
+    setUndoStack((stack) => stack.slice(0, -1));
+    commit((p) => ({ ...p, eliminated: previous }));
+  }, [undoStack, commit]);
 
   const arrest = useCallback(
     (suspect: Suspect) => {
@@ -190,8 +277,8 @@ export default function Game({ caseRef, onExit, onOpenCase, onShowRules }: Props
     setUndoStack([]);
     setElapsed(0);
     setVerdictOpen(false);
-    setProgress(newProgress(caseRef));
-  }, [caseRef]);
+    setProgress(newProgress(caseRef, progress.locked));
+  }, [caseRef, progress.locked]);
 
   const jumpTo = useCallback((suspect: Suspect) => {
     setSheet(null);
@@ -229,38 +316,57 @@ export default function Game({ caseRef, onExit, onOpenCase, onShowRules }: Props
       </header>
 
       <nav className="tabs" role="tablist">
-        <button
-          role="tab"
-          aria-selected={tab === "clues"}
-          className={tab === "clues" ? "tab active" : "tab"}
-          onClick={() => setTab("clues")}
-        >
-          Clues
-          <span className="tab-count">
-            {progress.checked.length}/{detectiveCase.clues.length}
-          </span>
-        </button>
-        <button
-          role="tab"
-          aria-selected={tab === "file"}
-          className={tab === "file" ? "tab active" : "tab"}
-          onClick={() => setTab("file")}
-        >
-          Casefile
-          <span className="tab-count">{standing.toLocaleString()} left</span>
-        </button>
+        {(
+          [
+            ["case", "Case", "the brief"],
+            [
+              "clues",
+              "Clues",
+              progress.locked
+                ? `${Math.min(progress.revealed, detectiveCase.clues.length)} of ${detectiveCase.clues.length} open`
+                : `${progress.checked.length}/${detectiveCase.clues.length}`,
+            ],
+            ["file", "Suspects", `${standing.toLocaleString()} left`],
+          ] as const
+        ).map(([id, label, meta]) => (
+          <button
+            key={id}
+            role="tab"
+            aria-selected={tab === id}
+            className={tab === id ? "tab active" : "tab"}
+            onClick={() => setTab(id)}
+          >
+            {label}
+            <span className="tab-count">{meta}</span>
+          </button>
+        ))}
       </nav>
 
-      {tab === "clues" ? (
+      {tab === "case" && (
+        <CasePanel
+          detectiveCase={detectiveCase}
+          locked={progress.locked}
+          standing={standing}
+          onOpenClues={() => setTab("clues")}
+        />
+      )}
+
+      {tab === "clues" && (
         <CluesPanel
           detectiveCase={detectiveCase}
           checked={progress.checked}
           assists={progress.assists}
-          locked={progress.status !== "playing"}
+          locked={progress.locked}
+          revealed={progress.revealed}
+          standing={standing}
+          unlockAt={unlockAt}
+          disabled={progress.status !== "playing"}
           onToggle={toggleClue}
           onApply={applyClue}
         />
-      ) : (
+      )}
+
+      {tab === "file" && (
         <CasefilePanel
           detectiveCase={detectiveCase}
           eliminated={eliminated}
@@ -270,6 +376,8 @@ export default function Game({ caseRef, onExit, onOpenCase, onShowRules }: Props
           killerId={detectiveCase.killerId}
           onPage={setPage}
           onToggle={toggleSuspect}
+          onCrossOutPage={crossOutPage}
+          onRestorePage={restorePage}
           onUndo={undoStack.length > 0 ? undo : undefined}
           onSearch={() => setSheet("search")}
         />
@@ -344,7 +452,7 @@ export default function Game({ caseRef, onExit, onOpenCase, onShowRules }: Props
           elapsedMs={elapsed}
           assists={progress.assists.length}
           wrongArrests={progress.wrongArrests}
-          onNewCase={onOpenCase}
+          onNewCase={(ref) => onOpenCase(ref, progress.locked)}
           onExit={onExit}
           onReviewFile={() => {
             setVerdictOpen(false);
